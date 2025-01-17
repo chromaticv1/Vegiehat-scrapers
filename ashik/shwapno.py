@@ -3,7 +3,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 import time 
 
-from functions.shwapno_2 import clickingOnNotification, searchItems
+from functions.shwapno import clickingOnNotification, searchItems
 
 driver = webdriver.Chrome()
 
