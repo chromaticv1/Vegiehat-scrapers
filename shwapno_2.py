@@ -3,7 +3,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 import time 
 
-from functions.shwapno_2 import clickingOnNotification
+from functions.shwapno_2 import clickingOnNotification, searchItems
 
 driver = webdriver.Chrome()
 
@@ -14,11 +14,14 @@ time.sleep(1)
 # Notifications
 clickingOnNotification(driver)
 
-productList = ["Rice", ""]
+productList = ["Rice", "Flour", "Lentil", "Soybean Oil", "Salt", "Egg", "Chicken", "Potato", "Eggplant","Onion", "Green Chilli"]
 
 
-# search_box = driver.find_element(By.CSS_SELECTOR, ".gLFyf")
-# search_box.send_keys("shwapno")
-# search_box.send_keys(Keys .ENTER)
+for item in productList:
+  main = driver.find_element(By.TAG_NAME, "body")
+  searchItems(main, item)
+
+
+
 
 time.sleep(10)
