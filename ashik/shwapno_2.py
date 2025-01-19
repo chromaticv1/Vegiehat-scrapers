@@ -2,7 +2,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 import time 
-
+import pandas as pd
 
 driver = webdriver.Chrome()
 # Product Information
@@ -71,7 +71,7 @@ productList = [
     "id": 10,
     "name": "Eggplant",
     "unit": 'kg',
-    "shwapno": ""
+    "shwapno": []
   },
   {
     "id": 11,
@@ -84,17 +84,14 @@ productList = [
     "id": 12,
     "name": "Green Chilli",
     "unit": 'kg',
-    "shwapno": ""
+    "shwapno": []
   }
 ]
 
 
-# Find Details
-# def get_details():
-
 
 # Get Data Function
-def get_data(driver, link):
+def get_data(driver, link, category, sub_category):
   try:
     driver.get(link)
     time.sleep(5)
@@ -104,9 +101,11 @@ def get_data(driver, link):
       name = product.find_element(By.CSS_SELECTOR, "h2 > a").text
       price = product.find_element(By.CSS_SELECTOR, "div.product-price > span.active-price").text
       price = price.split('৳')[1]
-      return [name, price]
+      unit = product.find_element(By.CSS_SELECTOR, "div.product-price > span.font-normal.self-end").text
+      newList.append({"id": len(newList)+1 , "Name": name, "Price": price, "Unit": unit, "category": category, "sub_category": sub_category})
+      
   except Exception as e:
-    print(f"Error fetching data: {e}")    
+    print(f"Error fetching data: {e}") 
 
 # Starting Code
 URL = "https://www.shwapno.com/"
@@ -118,13 +117,19 @@ noBtn = driver.find_element(By.CSS_SELECTOR, "#headlessui-dialog-panel-\:r1\: > 
 noBtn.click()
 time.sleep(0.5)
 
+newList = []
+
 # Search and Select Product
 for product in productList:
   if (isinstance(product["shwapno"], str)):
-    get_data(driver, product["shwapno"])
+    get_data(driver, product["shwapno"], product["name"], "")
     time.sleep(1)
   elif (isinstance(product["shwapno"], dict)):
-    get_data(driver, product["shwapno"]["Loose"])  
+    get_data(driver, product["shwapno"]["Loose"], product["name"], "Loose") 
     time.sleep(1)
-    get_data(driver, product["shwapno"]["Packet"])
+    get_data(driver, product["shwapno"]["Packet"], product["name"], "Packet")
+
+df = pd.DataFrame(newList)
+df.to_csv('product_data.csv', index=False) 
+print(df)
 time.sleep(50)
