@@ -3,6 +3,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 import time 
 import pandas as pd
+import re
 
 driver = webdriver.Chrome()
 # Product Information
@@ -98,10 +99,40 @@ productList = [
   }
 ]
 
+def adjust_price_by_quantity(name, price):
+  # Check for kg and divide price by the quantity
+  kg_match = re.search(r'(\d+(\.\d+)?)\s?kg', name, re.IGNORECASE)
+  if kg_match:
+    quantity = float(kg_match.group(1))
+    return round(price / quantity, 2)
+  
+  # Check for gm and adjust price for 1kg equivalent
+  gm_match = re.search(r'(\d+)\s?gm', name, re.IGNORECASE)
+  if gm_match:
+    quantity = int(gm_match.group(1))
+    if quantity > 0:
+      return round(price * (1000 / quantity), 2)
+  
+  # Check for liters (L) and divide price by the quantity
+  l_match = re.search(r'(\d+(\.\d+)?)\s?L', name, re.IGNORECASE)
+  if l_match:
+    quantity = float(l_match.group(1))
+    return round(price / quantity, 2)
+  
+  # Check for ml and adjust price for 1L equivalent
+  ml_match = re.search(r'(\d+)\s?ml', name, re.IGNORECASE)
+  if ml_match:
+    quantity = int(ml_match.group(1))
+    if quantity > 0:
+      return round(price * (1000 / quantity), 2)
+  
+  # Return the original price if no patterns match
+  return price
+
 
 
 # Get Data Function
-def get_data(driver, link, category, sub_category, altNames):
+def get_data(driver, link, category, sub_category, altNames, unit):
   try:
     driver.get(link)
     time.sleep(5)
@@ -112,8 +143,8 @@ def get_data(driver, link, category, sub_category, altNames):
       for altName in altNames:
         if altName.lower() in name.lower():
           price = product.find_element(By.CSS_SELECTOR, "div.product-price > span.active-price").text
-          price = price.split('৳')[1]
-          unit = product.find_element(By.CSS_SELECTOR, "div.product-price > span.font-normal.self-end").text
+          price = float(price.split('৳')[1])
+          price = adjust_price_by_quantity(name, price)
           newList.append({"id": len(newList)+1 , "Name": name, "Price": price, "Unit": unit, "category": category, "sub_category": sub_category})
       else: # This in for for loop
         print(name) # to see all the names
@@ -135,14 +166,15 @@ newList = []
 # Search and Select Product
 for product in productList:
   if (isinstance(product["shwapno"], str)):
-    get_data(driver, product["shwapno"], product["name"], "", product["altName"])
+    get_data(driver, product["shwapno"], product["name"], "", product["altName"], product["unit"])
     time.sleep(1)
   elif (isinstance(product["shwapno"], dict)):
-    get_data(driver, product["shwapno"]["Loose"], product["name"], "Loose", product["altName"]) 
+    get_data(driver, product["shwapno"]["Loose"], product["name"], "Loose", product["altName"], product["unit"]) 
     time.sleep(1)
-    get_data(driver, product["shwapno"]["Packet"], product["name"], "Packet", product["altName"])
+    get_data(driver, product["shwapno"]["Packet"], product["name"], "Packet", product["altName"], product["unit"])
 
-df = pd.DataFrame(newList)
+df = pd.DataFrame(newList) 
 df.to_csv('product_data.csv', index=False) 
 print(df)
-time.sleep(50)
+time.sleep(5)
+driver.quit()
